@@ -6,29 +6,59 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { LogIn, Users, Search } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import ApiService from '@/services/api';
 
 const Login = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSSOLogin = (provider) => {
+  const handleSSOLogin = async (provider) => {
     setIsLoading(true);
-    // Simulate SSO login process
-    setTimeout(() => {
+    
+    try {
+      // In real implementation, this would redirect to SSO provider
+      // For demo, simulate SSO response
+      const mockSSOData = {
+        email: provider === 'Google' ? 'john.doe@gmail.com' : 'john.doe@company.com',
+        name: 'John Doe',
+        provider: provider,
+        sso_token: 'mock_sso_token_' + Date.now()
+      };
+
+      // Try Django SSO authentication
+      const response = await ApiService.authenticateWithSSO(provider, mockSSOData);
+      
       // Store user session
+      localStorage.setItem('user', JSON.stringify(response.user));
+      
+      toast({
+        title: "Login successful",
+        description: `Authenticated with ${provider} via Django backend`
+      });
+      
+      navigate('/');
+      
+    } catch (error) {
+      console.error('SSO login failed, using fallback:', error);
+      
+      // Fallback to mock authentication
       localStorage.setItem('user', JSON.stringify({
         id: '1',
         name: 'John Doe',
         email: 'john.doe@example.com',
         provider: provider
       }));
+      
       toast({
-        title: "Login successful",
-        description: `Logged in with ${provider}`
+        title: "Login successful (Fallback)",
+        description: `Logged in with ${provider} - Check Django backend connection`,
+        variant: "destructive"
       });
+      
       navigate('/');
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   return (

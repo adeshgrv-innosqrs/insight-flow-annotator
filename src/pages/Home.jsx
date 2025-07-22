@@ -5,6 +5,7 @@ import SearchPanel from '@/components/SearchPanel';
 import HistoryPanel from '@/components/HistoryPanel';
 import Header from '@/components/Header';
 import SubmitSection from '@/components/SubmitSection';
+import ApiService from '@/services/api';
 import { toast } from '@/hooks/use-toast';
 
 const Home = () => {
@@ -45,41 +46,72 @@ const Home = () => {
     }
   ];
 
-  // Check authentication
+  // Check authentication and load data
   useEffect(() => {
-    const userData = localStorage.getItem('user');
-    if (!userData) {
-      navigate('/login');
-      return;
-    }
-    
-    const parsedUser = JSON.parse(userData);
-    setUser(parsedUser);
-    setQuestions(sampleQuestions);
-    
-    // Load user history
-    const userHistory = localStorage.getItem(`history_${parsedUser.id}`) || '[]';
-    setHistory(JSON.parse(userHistory));
-    
-    setIsLoading(false);
+    const loadData = async () => {
+      const userData = localStorage.getItem('user');
+      if (!userData) {
+        navigate('/login');
+        return;
+      }
+      
+      const parsedUser = JSON.parse(userData);
+      setUser(parsedUser);
+      
+      try {
+        // Load questions from Django API
+        const questionsData = await ApiService.getQuestions();
+        setQuestions(questionsData);
+        
+        // Load user history from Django API
+        const historyData = await ApiService.getUserHistory();
+        setHistory(historyData);
+      } catch (error) {
+        console.error('Failed to load data:', error);
+        // Fallback to sample questions if API fails
+        setQuestions(sampleQuestions);
+        
+        // Load local history as fallback
+        const userHistory = localStorage.getItem(`history_${parsedUser.id}`) || '[]';
+        setHistory(JSON.parse(userHistory));
+        
+        toast({
+          title: "API Connection Failed",
+          description: "Using sample data. Check Django backend connection.",
+          variant: "destructive"
+        });
+      }
+      
+      setIsLoading(false);
+    };
+
+    loadData();
   }, [navigate]);
 
   const handleSearch = async (query) => {
-    // Simulate OpenAI API call
     setSearchResults({ loading: true });
     
-    setTimeout(() => {
-      const mockResponse = {
-        query: query,
-        response: `Based on current information, here's what I found regarding "${query}": This is a simulated GPT response that would normally come from OpenAI's API. The response includes relevant information, key insights, and contextual details that help answer the query comprehensively.`,
-        timestamp: new Date().toISOString(),
-        confidence: 0.85
-      };
-      setSearchResults(mockResponse);
-    }, 1500);
+    try {
+      // Try Django API first
+      const response = await ApiService.searchWithAI(query);
+      setSearchResults(response);
+    } catch (error) {
+      console.error('API search failed, using mock response:', error);
+      
+      // Fallback to mock response
+      setTimeout(() => {
+        const mockResponse = {
+          query: query,
+          response: `Based on current information, here's what I found regarding "${query}": This is a simulated GPT response that would normally come from OpenAI's API via Django backend. The response includes relevant information, key insights, and contextual details that help answer the query comprehensively.`,
+          timestamp: new Date().toISOString(),
+          confidence: 0.85
+        };
+        setSearchResults(mockResponse);
+      }, 1500);
+    }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!searchResults || searchResults.loading) {
       toast({
         title: "No search results",
@@ -89,26 +121,51 @@ const Home = () => {
       return;
     }
 
-    const submission = {
-      id: Date.now(),
-      questionId: questions[currentQuestionIndex].id,
-      questionText: questions[currentQuestionIndex].text,
-      searchQuery: searchResults.query,
-      gptAnswer: searchResults.response,
-      userId: user.id,
-      timestamp: new Date().toISOString()
+    const evaluationData = {
+      question_id: questions[currentQuestionIndex].id,
+      search_query: searchResults.query,
+      gpt_response: searchResults.response,
     };
 
-    const newHistory = [submission, ...history];
-    setHistory(newHistory);
-    
-    // Save to localStorage (in real app, this would be API call)
-    localStorage.setItem(`history_${user.id}`, JSON.stringify(newHistory));
+    try {
+      // Try Django API first
+      const response = await ApiService.submitEvaluation(evaluationData);
+      
+      // Update local history with server response
+      const newHistory = [response.evaluation, ...history];
+      setHistory(newHistory);
 
-    toast({
-      title: "Submission recorded",
-      description: "Your evaluation has been saved successfully."
-    });
+      toast({
+        title: "Submission recorded",
+        description: "Your evaluation has been saved successfully."
+      });
+
+    } catch (error) {
+      console.error('API submission failed, saving locally:', error);
+      
+      // Fallback to local storage
+      const submission = {
+        id: Date.now(),
+        questionId: questions[currentQuestionIndex].id,
+        questionText: questions[currentQuestionIndex].text,
+        searchQuery: searchResults.query,
+        gptAnswer: searchResults.response,
+        userId: user.id,
+        timestamp: new Date().toISOString()
+      };
+
+      const newHistory = [submission, ...history];
+      setHistory(newHistory);
+      
+      // Save to localStorage as fallback
+      localStorage.setItem(`history_${user.id}`, JSON.stringify(newHistory));
+
+      toast({
+        title: "Saved locally",
+        description: "Your evaluation was saved locally. Check Django backend connection.",
+        variant: "destructive"
+      });
+    }
 
     // Clear search results and move to next question
     setSearchResults(null);
