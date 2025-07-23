@@ -1,8 +1,20 @@
 import { useState } from 'react';
-import { Search, Send, Sparkles, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import {
+  Search,
+  Send,
+  Sparkles,
+  Clock,
+  CheckCircle,
+  AlertCircle
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
 const SearchPanel = ({ onSearch, searchResults }) => {
@@ -16,12 +28,12 @@ const SearchPanel = ({ onSearch, searchResults }) => {
   };
 
   return (
-    <div className="h-full flex flex-col bg-search-background">
+    <div className="h-full flex flex-col bg-search-background overflow-hidden">
       {/* Header */}
       <div className="p-6 border-b border-panel-border">
         <h2 className="text-lg font-semibold text-foreground flex items-center">
           <Search className="h-5 w-5 mr-2 text-primary" />
-          AI Research Assistant
+          Research Assistant
         </h2>
         <p className="text-sm text-muted-foreground mt-1">
           Use AI to research and gather relevant information
@@ -30,7 +42,7 @@ const SearchPanel = ({ onSearch, searchResults }) => {
 
       {/* Search Form */}
       <div className="p-6 border-b border-panel-border">
-        <form onSubmit={handleSubmit} className="space-y-3">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="relative">
             <Input
               type="text"
@@ -42,40 +54,39 @@ const SearchPanel = ({ onSearch, searchResults }) => {
             <Button
               type="submit"
               size="sm"
-              disabled={!query.trim() || (searchResults?.loading)}
+              disabled={!query.trim() || searchResults?.loading}
               className="absolute right-1 top-1 h-10 px-3"
             >
               {searchResults?.loading ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
               ) : (
                 <Send className="h-4 w-4" />
               )}
             </Button>
           </div>
-          
           <div className="flex items-center text-xs text-muted-foreground">
             <Sparkles className="h-3 w-3 mr-1" />
-            <span>Powered by OpenAI GPT-4</span>
+            <span>Search</span>
           </div>
         </form>
       </div>
 
-      {/* Results Area */}
-      <div className="flex-1 p-6 overflow-y-auto">
+      {/* Results */}
+      <div className="flex-1 p-6 space-y-6 overflow-y-auto">
         {!searchResults && (
           <div className="h-full flex items-center justify-center">
             <div className="text-center space-y-4 max-w-md">
               <div className="bg-muted rounded-full p-4 w-fit mx-auto">
                 <Search className="h-8 w-8 text-muted-foreground" />
               </div>
-              <div>
-                <h3 className="text-lg font-medium text-foreground mb-2">Ready to Research</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed">
-                  Enter a search query above to get AI-powered insights and information 
-                  to help you evaluate the current question.
-                </p>
-              </div>
-              <div className="text-xs text-muted-foreground">
+              <h3 className="text-lg font-medium text-foreground mb-1">
+                Ready to Research
+              </h3>
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                Enter a search query above to get AI-powered insights and
+                information to help you evaluate the current question.
+              </p>
+              <div className="text-xs text-muted-foreground space-y-1">
                 <p>• Ask specific questions about the topic</p>
                 <p>• Request recent developments or trends</p>
                 <p>• Get contextual information and analysis</p>
@@ -87,11 +98,13 @@ const SearchPanel = ({ onSearch, searchResults }) => {
         {searchResults?.loading && (
           <div className="h-full flex items-center justify-center">
             <div className="text-center space-y-4">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-              <div>
-                <h3 className="text-lg font-medium text-foreground">Searching...</h3>
-                <p className="text-muted-foreground">AI is analyzing your query</p>
-              </div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
+              <h3 className="text-lg font-medium text-foreground">
+                Searching...
+              </h3>
+              <p className="text-muted-foreground">
+                AI is analyzing your query
+              </p>
             </div>
           </div>
         )}
@@ -119,7 +132,11 @@ const SearchPanel = ({ onSearch, searchResults }) => {
                   </p>
                   <div className="flex items-center text-xs text-muted-foreground mt-2">
                     <Clock className="h-3 w-3 mr-1" />
-                    <span>{new Date(searchResults.timestamp).toLocaleTimeString()}</span>
+                    <span>
+                      {new Date(
+                        searchResults.timestamp
+                      ).toLocaleTimeString()}
+                    </span>
                   </div>
                 </div>
               </CardContent>
@@ -149,7 +166,8 @@ const SearchPanel = ({ onSearch, searchResults }) => {
                 <div className="text-sm">
                   <p className="text-blue-800 font-medium">Ready to Submit</p>
                   <p className="text-blue-700 mt-1">
-                    Review the AI response and click Submit below to record your evaluation.
+                    Review the AI response and click Submit below to record
+                    your evaluation.
                   </p>
                 </div>
               </div>

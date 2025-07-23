@@ -72,41 +72,6 @@ const QuestionPanel = ({ questions, currentIndex, onNavigate }) => {
           </CardContent>
         </Card>
 
-        {/* Question List Preview */}
-        <div className="mt-6">
-          <h3 className="text-sm font-medium text-foreground mb-3">All Questions</h3>
-          <div className="space-y-2 max-h-40 overflow-y-auto">
-            {questions.map((question, index) => (
-              <div
-                key={question.id}
-                className={`p-3 rounded-lg border text-sm cursor-pointer transition-colors ${
-                  index === currentIndex 
-                    ? 'bg-question-active border-primary' 
-                    : 'bg-card border-border hover:bg-muted'
-                }`}
-                onClick={() => {
-                  if (index !== currentIndex) {
-                    // You could add confirmation dialog here
-                    const confirmSwitch = window.confirm('Switch to this question? Any unsaved search results will be lost.');
-                    if (confirmSwitch) {
-                      onNavigate(index > currentIndex ? 'next' : 'prev');
-                    }
-                  }
-                }}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">Q{index + 1}</span>
-                  <Badge variant="secondary" className="text-xs">
-                    {question.category}
-                  </Badge>
-                </div>
-                <p className="text-muted-foreground mt-1 line-clamp-2">
-                  {question.text}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   );

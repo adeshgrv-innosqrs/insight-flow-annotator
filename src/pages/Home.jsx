@@ -54,15 +54,15 @@ const Home = () => {
         navigate('/login');
         return;
       }
-      
+
       const parsedUser = JSON.parse(userData);
       setUser(parsedUser);
-      
+
       try {
         // Load questions from Django API
         const questionsData = await ApiService.getQuestions();
         setQuestions(questionsData);
-        
+
         // Load user history from Django API
         const historyData = await ApiService.getUserHistory();
         setHistory(historyData);
@@ -70,18 +70,18 @@ const Home = () => {
         console.error('Failed to load data:', error);
         // Fallback to sample questions if API fails
         setQuestions(sampleQuestions);
-        
+
         // Load local history as fallback
         const userHistory = localStorage.getItem(`history_${parsedUser.id}`) || '[]';
         setHistory(JSON.parse(userHistory));
-        
+
         toast({
           title: "API Connection Failed",
           description: "Using sample data. Check Django backend connection.",
           variant: "destructive"
         });
       }
-      
+
       setIsLoading(false);
     };
 
@@ -90,14 +90,14 @@ const Home = () => {
 
   const handleSearch = async (query) => {
     setSearchResults({ loading: true });
-    
+
     try {
       // Try Django API first
       const response = await ApiService.searchWithAI(query);
       setSearchResults(response);
     } catch (error) {
       console.error('API search failed, using mock response:', error);
-      
+
       // Fallback to mock response
       setTimeout(() => {
         const mockResponse = {
@@ -130,7 +130,7 @@ const Home = () => {
     try {
       // Try Django API first
       const response = await ApiService.submitEvaluation(evaluationData);
-      
+
       // Update local history with server response
       const newHistory = [response.evaluation, ...history];
       setHistory(newHistory);
@@ -142,7 +142,7 @@ const Home = () => {
 
     } catch (error) {
       console.error('API submission failed, saving locally:', error);
-      
+
       // Fallback to local storage
       const submission = {
         id: Date.now(),
@@ -156,7 +156,7 @@ const Home = () => {
 
       const newHistory = [submission, ...history];
       setHistory(newHistory);
-      
+
       // Save to localStorage as fallback
       localStorage.setItem(`history_${user.id}`, JSON.stringify(newHistory));
 
@@ -201,8 +201,8 @@ const Home = () => {
         localStorage.removeItem('user');
         navigate('/login');
       }} />
-      
-      <div className="flex flex-col h-[calc(100vh-4rem)]">
+
+      <div className="flex flex-col min-h-[1600px]">
         {/* History Section */}
         <div className="p-4 border-b border-border">
           <HistoryPanel history={history} />
@@ -210,8 +210,45 @@ const Home = () => {
 
         {/* Main Content */}
         <div className="flex-1 flex overflow-hidden">
-          {/* Left Panel - Questions */}
-          <div className="w-1/2 border-r border-border">
+          {/* Left Panel - Question List (scrollable) */}
+          <div className="w-[30%] border-r border-border overflow-y-auto p-4">
+            <div className="mt-2">
+              <h3 className="text-sm font-medium text-foreground mb-3">All Questions</h3>
+              <div className="space-y-2">
+                {questions.map((question, index) => (
+                  <div
+                    key={question.id}
+                    className={`p-3 rounded-lg border text-sm cursor-pointer transition-colors ${index === currentQuestionIndex
+                        ? 'bg-question-active border-primary'
+                        : 'bg-card border-border hover:bg-muted'
+                      }`}
+                    onClick={() => {
+                      if (index !== currentQuestionIndex) {
+                        const confirmSwitch = window.confirm('Switch to this question? Any unsaved search results will be lost.');
+                        if (confirmSwitch) {
+                          setCurrentQuestionIndex(index);
+                        }
+                      }
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">Q{index + 1}</span>
+                      <div className="bg-secondary text-xs text-muted px-2 py-0.5 rounded">
+                        {question.category}
+                      </div>
+                    </div>
+                    <p className="text-muted-foreground mt-1 line-clamp-2">
+                      {question.text}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+
+          {/* Middle Panel - Current Question */}
+          <div className="w-[45%] border-r border-border overflow-y-auto">
             <QuestionPanel
               questions={questions}
               currentIndex={currentQuestionIndex}
@@ -220,13 +257,14 @@ const Home = () => {
           </div>
 
           {/* Right Panel - Search */}
-          <div className="w-1/2">
+          <div className="w-[40%] overflow-y-auto">
             <SearchPanel
               onSearch={handleSearch}
               searchResults={searchResults}
             />
           </div>
         </div>
+
 
         {/* Submit Section */}
         <div className="border-t border-border">
